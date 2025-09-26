@@ -4,6 +4,7 @@ from datetime import date
 class PersonBase(BaseModel):
     english_name: str
     hebrew_name: str | None = None
+    father_hebrew_name: str | None = None   # NEW
     notes: str | None = None
 
 class PersonCreate(PersonBase):
@@ -12,7 +13,7 @@ class PersonCreate(PersonBase):
 class Person(PersonBase):
     id: int
     class Config:
-        orm_mode = True
+        from_attributes = True  # Pydantic v2 fix
 
 class AliyahBase(BaseModel):
     date: date
@@ -28,7 +29,7 @@ class AliyahCreate(AliyahBase):
 class Aliyah(AliyahBase):
     id: int
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class RelationshipBase(BaseModel):
     relation_type: str
@@ -41,4 +42,4 @@ class RelationshipCreate(RelationshipBase):
 class Relationship(RelationshipBase):
     id: int
     class Config:
-        orm_mode = True
+        from_attributes = True

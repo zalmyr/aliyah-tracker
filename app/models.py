@@ -7,6 +7,7 @@ class Person(Base):
     id = Column(Integer, primary_key=True, index=True)
     english_name = Column(String, nullable=False)
     hebrew_name = Column(String, nullable=True)
+    father_hebrew_name = Column(String, nullable=True)   # NEW
     notes = Column(Text, nullable=True)
 
     aliyot = relationship("Aliyah", back_populates="person")

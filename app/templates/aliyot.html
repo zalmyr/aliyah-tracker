@@ -2,16 +2,40 @@
 {% block content %}
 <h1>Aliyot</h1>
 <form method="post">
-    <input type="date" name="date" required>
-    <input type="text" name="parsha" placeholder="Parsha" required>
+    <label>Date:</label>
+    <input type="date" name="date" id="aliyah-date" required>
+
+    <label>Parsha:</label>
+    <input type="text" name="parsha" id="parsha" placeholder="Auto-filled from Hebcal">
+
+    <label>Service:</label>
     <input type="text" name="service" placeholder="Service" required>
-    <input type="text" name="aliyah_number" placeholder="Aliyah (e.g. Kohen)" required>
+
+    <label>Aliyah:</label>
+    <select name="aliyah_number" required>
+        <option value="Kohen">Kohen</option>
+        <option value="Levi">Levi</option>
+        <option value="Shlishi">Shlishi</option>
+        <option value="Revii">Revii</option>
+        <option value="Chamishi">Chamishi</option>
+        <option value="Shishi">Shishi</option>
+        <option value="Shevii">Shevii</option>
+        <option value="Maftir">Maftir</option>
+        <option value="Hagbah">Hagbah</option>
+        <option value="Gelilah">Gelilah</option>
+        <option value="Other">Other</option>
+    </select>
+
+    <label>Reason:</label>
     <input type="text" name="reason" placeholder="Reason">
+
+    <label>Person:</label>
     <select name="person_id" required>
         {% for p in people %}
         <option value="{{ p.id }}">{{ p.english_name }}</option>
         {% endfor %}
     </select>
+
     <button type="submit">Add</button>
 </form>
 
@@ -20,4 +44,15 @@
     <li>{{ a.date }} - {{ a.parsha }} ({{ a.service }}) - {{ a.aliyah_number }}: {{ a.person.english_name }}</li>
 {% endfor %}
 </ul>
+
+<script>
+document.getElementById("aliyah-date").addEventListener("change", async function() {
+    const date = this.value;
+    if (date) {
+        const res = await fetch(`/api/parsha?date=${date}`);
+        const data = await res.json();
+        document.getElementById("parsha").value = data.parsha || "";
+    }
+});
+</script>
 {% endblock %}

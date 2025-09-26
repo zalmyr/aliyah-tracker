@@ -1,8 +1,9 @@
 from fastapi import FastAPI, Depends, Form, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
+import requests
 from . import models, schemas, crud, database
 
 app = FastAPI()
@@ -29,10 +30,16 @@ def list_people(request: Request, db: Session = Depends(database.get_db)):
 def add_person(
     english_name: str = Form(...),
     hebrew_name: str = Form(None),
+    father_hebrew_name: str = Form(None),   # NEW
     notes: str = Form(None),
     db: Session = Depends(database.get_db)
 ):
-    person = schemas.PersonCreate(english_name=english_name, hebrew_name=hebrew_name, notes=notes)
+    person = schemas.PersonCreate(
+        english_name=english_name,
+        hebrew_name=hebrew_name,
+        father_hebrew_name=father_hebrew_name,
+        notes=notes
+    )
     crud.create_person(db, person)
     return RedirectResponse(url="/people", status_code=303)
 
@@ -53,7 +60,14 @@ def add_aliyah(
     person_id: int = Form(...),
     db: Session = Depends(database.get_db)
 ):
-    aliyah = schemas.AliyahCreate(date=date, parsha=parsha, service=service, aliyah_number=aliyah_number, reason=reason, person_id=person_id)
+    aliyah = schemas.AliyahCreate(
+        date=date,
+        parsha=parsha,
+        service=service,
+        aliyah_number=aliyah_number,
+        reason=reason,
+        person_id=person_id
+    )
     crud.create_aliyah(db, aliyah)
     return RedirectResponse(url="/aliyot", status_code=303)
 
@@ -74,3 +88,16 @@ def add_relationship(
     rel = schemas.RelationshipCreate(relation_type=relation_type, person_id=person_id, related_person_id=related_person_id)
     crud.create_relationship(db, rel)
     return RedirectResponse(url="/relationships", status_code=303)
+
+# --- Hebcal API ---
+@app.get("/api/parsha")
+def get_parsha(date: str):
+    """Return parsha for a given YYYY-MM-DD date using Hebcal API"""
+    try:
+        y, m, d = date.split("-")
+        url = f"https://www.hebcal.com/converter?cfg=json&gy={y}&gm={m}&gd={d}&g2h=1"
+        resp = requests.get(url)
+        data = resp.json()
+        return JSONResponse({"parsha": data.get("parsha", [""])[0] if "parsha" in data else ""})
+    except Exception as e:
+        return JSONResponse({"parsha": ""})

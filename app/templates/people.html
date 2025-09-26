@@ -4,13 +4,17 @@
 <form method="post">
     <input type="text" name="english_name" placeholder="English name" required>
     <input type="text" name="hebrew_name" placeholder="Hebrew name">
+    <input type="text" name="father_hebrew_name" placeholder="Father's Hebrew name">
     <input type="text" name="notes" placeholder="Notes">
     <button type="submit">Add</button>
 </form>
 
 <ul>
 {% for p in people %}
-    <li>{{ p.english_name }} {% if p.hebrew_name %}({{ p.hebrew_name }}){% endif %}</li>
+    <li>{{ p.english_name }}
+        {% if p.hebrew_name %}({{ p.hebrew_name }}){% endif %}
+        {% if p.father_hebrew_name %} ben {{ p.father_hebrew_name }}{% endif %}
+    </li>
 {% endfor %}
 </ul>
 {% endblock %}
