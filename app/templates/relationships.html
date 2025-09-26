@@ -5,7 +5,7 @@
     <label>Person:</label>
     <select name="person_id" required>
         {% for p in people %}
-        <option value="{{ p.id }}">{{ p.english_name }}</option>
+        <option value="{{ p.id }}">{{ p.first_name }} {{ p.last_name or '' }}</option>
         {% endfor %}
     </select>
 
@@ -15,16 +15,46 @@
     <label>Related To:</label>
     <select name="related_person_id" required>
         {% for p in people %}
-        <option value="{{ p.id }}">{{ p.english_name }}</option>
+        <option value="{{ p.id }}">{{ p.first_name }} {{ p.last_name or '' }}</option>
         {% endfor %}
     </select>
 
     <button type="submit">Add Relationship</button>
 </form>
 
-<ul>
+<table>
+<tr><th>Person</th><th>Relation</th><th>Related</th><th>Actions</th></tr>
 {% for r in relationships %}
-    <li>{{ r.person.english_name }} is {{ r.relation_type }} of {{ r.related_person.english_name }}</li>
+<tr data-id="{{ r.id }}">
+    <td>{{ r.person.first_name }} {{ r.person.last_name or '' }}</td>
+    <td contenteditable="true" class="editable" data-field="relation_type">{{ r.relation_type }}</td>
+    <td>{{ r.related_person.first_name }} {{ r.related_person.last_name or '' }}</td>
+    <td><button class="save-btn">💾 Save</button></td>
+</tr>
 {% endfor %}
-</ul>
+</table>
+
+<script>
+document.querySelectorAll(".save-btn").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+        const row = e.target.closest("tr");
+        const id = row.dataset.id;
+        const data = {};
+        row.querySelectorAll(".editable").forEach(cell => {
+            data[cell.dataset.field] = cell.innerText.trim();
+        });
+        // Need to send required person_id + related_person_id back too
+        await fetch(`/relationships/${id}`, {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                ...data,
+                person_id: row.dataset.personId,
+                related_person_id: row.dataset.relatedPersonId
+            })
+        });
+        alert("Updated!");
+    });
+});
+</script>
 {% endblock %}

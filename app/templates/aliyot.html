@@ -1,58 +1,138 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Aliyot</h1>
+
 <form method="post">
     <label>Date:</label>
     <input type="date" name="date" id="aliyah-date" required>
 
     <label>Parsha:</label>
-    <input type="text" name="parsha" id="parsha" placeholder="Auto-filled from Hebcal">
+    <input type="text" name="parsha" id="parsha">
+
+    <label>Yomtov:</label>
+    <input type="text" name="yomtov" id="yomtov">
 
     <label>Service:</label>
-    <input type="text" name="service" placeholder="Service" required>
-
-    <label>Aliyah:</label>
-    <select name="aliyah_number" required>
-        <option value="Kohen">Kohen</option>
-        <option value="Levi">Levi</option>
-        <option value="Shlishi">Shlishi</option>
-        <option value="Revii">Revii</option>
-        <option value="Chamishi">Chamishi</option>
-        <option value="Shishi">Shishi</option>
-        <option value="Shevii">Shevii</option>
-        <option value="Maftir">Maftir</option>
-        <option value="Hagbah">Hagbah</option>
-        <option value="Gelilah">Gelilah</option>
-        <option value="Other">Other</option>
+    <select name="service" id="service" required>
+        <option value="Shacharit">Shacharit</option>
+        <option value="Mincha">Mincha</option>
     </select>
 
+    <label>Aliyah:</label>
+    <select name="aliyah_number" id="aliyah-dropdown" required></select>
+
     <label>Reason:</label>
-    <input type="text" name="reason" placeholder="Reason">
+    <input type="text" name="reason">
 
     <label>Person:</label>
     <select name="person_id" required>
         {% for p in people %}
-        <option value="{{ p.id }}">{{ p.english_name }}</option>
+        <option value="{{ p.id }}">{{ (p.hebrew_name or '') ~ " בן " ~ (p.father_hebrew_name or '') }}</option>
         {% endfor %}
     </select>
 
     <button type="submit">Add</button>
 </form>
 
-<ul>
-{% for a in aliyot %}
-    <li>{{ a.date }} - {{ a.parsha }} ({{ a.service }}) - {{ a.aliyah_number }}: {{ a.person.english_name }}</li>
-{% endfor %}
-</ul>
+<h2>Aliyot List</h2>
+<table border="1">
+    <thead>
+        <tr>
+            <th>Date</th><th>Parsha</th><th>Yomtov</th><th>Service</th>
+            <th>Aliyah</th><th>Person</th><th>Reason</th>
+        </tr>
+    </thead>
+    <tbody id="aliyotBody">
+        {% for a in aliyot %}
+        <tr data-id="{{ a.id }}">
+            <td data-field="date">{{ a.date }}</td>
+            <td data-field="parsha">{{ a.parsha or '' }}</td>
+            <td data-field="yomtov">{{ a.yomtov or '' }}</td>
+            <td data-field="service">{{ a.service }}</td>
+            <td data-field="aliyah_number">{{ a.aliyah_number }}</td>
+            <td>{{ a.person.hebrew_name or '' }} בן {{ a.person.father_hebrew_name or '' }}</td>
+            <td data-field="reason">{{ a.reason or '' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 
 <script>
-document.getElementById("aliyah-date").addEventListener("change", async function() {
-    const date = this.value;
-    if (date) {
-        const res = await fetch(`/api/parsha?date=${date}`);
-        const data = await res.json();
-        document.getElementById("parsha").value = data.parsha || "";
+function populateAliyot(dayType, service) {
+    const dropdown = document.getElementById("aliyah-dropdown");
+    dropdown.innerHTML = "";
+
+    let options = [];
+    if (service === "Mincha") {
+        options = ["כהן", "לוי", "ישראל"];
+    } else if (service === "Shacharit") {
+        if (dayType === "shabbat") {
+            options = ["כהן","לוי","שלישי","רביעי","חמישי","ששי","שביעי","מפטיר","אחרון"];
+        } else if (dayType === "roshchodesh") {
+            options = ["כהן","לוי","שלישי","רביעי"]; // ✅ no מפטיר
+        } else if (dayType === "yomtov") {
+            options = ["כהן","לוי","שלישי","רביעי","חמישי","מפטיר"];
+        } else if (dayType === "yomkippur") {
+            options = ["כהן","לוי","שלישי","רביעי","חמישי","ששי","מפטיר"];
+        } else if (dayType === "simchattorah") {
+            options = ["כהן","לוי","שלישי","רביעי","חמישי","ששי","שביעי","בראשית","מפטיר","אחרון"];
+        } else {
+            options = ["כהן","לוי","ישראל"];
+        }
     }
+
+    options.forEach(opt => {
+        const option = document.createElement("option");
+        option.value = opt;
+        option.textContent = opt;
+        dropdown.appendChild(option);
+    });
+}
+
+document.getElementById("aliyah-date").addEventListener("change", async function() {
+    const res = await fetch(`/api/parsha-yomtov?date=${this.value}`);
+    const data = await res.json();
+    document.getElementById("parsha").value = data.parsha || "";
+    document.getElementById("yomtov").value = data.yomtov || "";
+    populateAliyot(data.day_type, document.getElementById("service").value);
+});
+
+document.getElementById("service").addEventListener("change", function() {
+    const date = document.getElementById("aliyah-date").value;
+    if (date) {
+        fetch(`/api/parsha-yomtov?date=${date}`)
+            .then(res => res.json())
+            .then(data => {
+                populateAliyot(data.day_type, document.getElementById("service").value);
+            });
+    }
+});
+
+// Inline editing
+document.querySelectorAll("#aliyotBody td[data-field]").forEach(cell => {
+    cell.addEventListener("click", function() {
+        if (this.querySelector("input")) return;
+        let currentText = this.innerText;
+        let field = this.dataset.field;
+        let row = this.closest("tr");
+        let id = row.dataset.id;
+
+        let input = document.createElement("input");
+        input.type = "text";
+        input.value = currentText;
+        this.innerHTML = "";
+        this.appendChild(input);
+        input.focus();
+
+        input.addEventListener("blur", () => {
+            let newText = input.value;
+            this.innerText = newText;
+            fetch(`/update/aliyah/${id}`, {
+                method: "POST",
+                body: new URLSearchParams({field: field, value: newText})
+            });
+        });
+    });
 });
 </script>
 {% endblock %}

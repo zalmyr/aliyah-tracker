@@ -2,9 +2,11 @@ from pydantic import BaseModel
 from datetime import date
 
 class PersonBase(BaseModel):
-    english_name: str
+    first_name: str
+    last_name: str | None = None
     hebrew_name: str | None = None
-    father_hebrew_name: str | None = None   # NEW
+    father_hebrew_name: str | None = None
+    tribe: str = "ישראל"
     notes: str | None = None
 
 class PersonCreate(PersonBase):
@@ -13,11 +15,12 @@ class PersonCreate(PersonBase):
 class Person(PersonBase):
     id: int
     class Config:
-        from_attributes = True  # Pydantic v2 fix
+        from_attributes = True
 
 class AliyahBase(BaseModel):
     date: date
-    parsha: str
+    parsha: str | None = None
+    yomtov: str | None = None
     service: str
     aliyah_number: str
     reason: str | None = None

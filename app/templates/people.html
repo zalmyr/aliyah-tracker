@@ -1,20 +1,80 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>People</h1>
-<form method="post">
-    <input type="text" name="english_name" placeholder="English name" required>
-    <input type="text" name="hebrew_name" placeholder="Hebrew name">
-    <input type="text" name="father_hebrew_name" placeholder="Father's Hebrew name">
-    <input type="text" name="notes" placeholder="Notes">
-    <button type="submit">Add</button>
+
+<h2>Import / Export</h2>
+<a href="/export/people.csv">Export CSV</a> | <a href="/export/people.xlsx">Export Excel</a>
+<form method="post" action="/import/people" enctype="multipart/form-data">
+    <input type="file" name="file" accept=".csv,.xlsx" required>
+    <button type="submit">Import</button>
 </form>
 
-<ul>
-{% for p in people %}
-    <li>{{ p.english_name }}
-        {% if p.hebrew_name %}({{ p.hebrew_name }}){% endif %}
-        {% if p.father_hebrew_name %} ben {{ p.father_hebrew_name }}{% endif %}
-    </li>
-{% endfor %}
-</ul>
+<h2>People List</h2>
+<input type="text" id="searchBox" placeholder="Search names...">
+<select id="tribeFilter">
+    <option value="">All Tribes</option>
+    <option value="כהן">כהן</option>
+    <option value="לוי">לוי</option>
+    <option value="ישראל">ישראל</option>
+</select>
+
+<table id="peopleTable" border="1">
+    <thead>
+        <tr>
+            <th onclick="sortTable(0)">First Name</th>
+            <th onclick="sortTable(1)">Last Name</th>
+            <th onclick="sortTable(2)">Hebrew Name</th>
+            <th onclick="sortTable(3)">Father Hebrew Name</th>
+            <th onclick="sortTable(4)">Full Display</th>
+            <th onclick="sortTable(5)">Tribe</th>
+            <th>Notes</th>
+        </tr>
+    </thead>
+    <tbody id="peopleBody">
+        {% for p in people %}
+        <tr>
+            <td>{{ p.first_name }}</td>
+            <td>{{ p.last_name or '' }}</td>
+            <td>{{ p.hebrew_name or '' }}</td>
+            <td>{{ p.father_hebrew_name or '' }}</td>
+            <td>{{ (p.hebrew_name or '') ~ " בן " ~ (p.father_hebrew_name or '') }}</td>
+            <td>{{ p.tribe }}</td>
+            <td>{{ p.notes or '' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+document.getElementById("searchBox").addEventListener("keyup", function() {
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll("#peopleBody tr");
+    rows.forEach(row => {
+        let text = row.innerText.toLowerCase();
+        row.style.display = text.includes(filter) ? "" : "none";
+    });
+});
+
+document.getElementById("tribeFilter").addEventListener("change", function() {
+    let filter = this.value;
+    let rows = document.querySelectorAll("#peopleBody tr");
+    rows.forEach(row => {
+        let tribe = row.cells[5].innerText;
+        row.style.display = (filter === "" || tribe === filter) ? "" : "none";
+    });
+});
+
+function sortTable(n) {
+    let table = document.getElementById("peopleTable");
+    let rows = Array.from(table.rows).slice(1);
+    let asc = table.getAttribute("data-sortdir") !== "asc";
+    rows.sort((a, b) => {
+        let x = a.cells[n].innerText.toLowerCase();
+        let y = b.cells[n].innerText.toLowerCase();
+        return asc ? x.localeCompare(y) : y.localeCompare(x);
+    });
+    rows.forEach(row => table.tBodies[0].appendChild(row));
+    table.setAttribute("data-sortdir", asc ? "asc" : "desc");
+}
+</script>
 {% endblock %}

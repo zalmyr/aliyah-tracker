@@ -5,9 +5,11 @@ from .database import Base
 class Person(Base):
     __tablename__ = "people"
     id = Column(Integer, primary_key=True, index=True)
-    english_name = Column(String, nullable=False)
+    first_name = Column(String, nullable=False)
+    last_name = Column(String, nullable=True)
     hebrew_name = Column(String, nullable=True)
-    father_hebrew_name = Column(String, nullable=True)   # NEW
+    father_hebrew_name = Column(String, nullable=True)
+    tribe = Column(String, nullable=False, default="ישראל")  # כהן / לוי / ישראל
     notes = Column(Text, nullable=True)
 
     aliyot = relationship("Aliyah", back_populates="person")
@@ -16,9 +18,10 @@ class Aliyah(Base):
     __tablename__ = "aliyot"
     id = Column(Integer, primary_key=True, index=True)
     date = Column(Date, nullable=False)
-    parsha = Column(String, nullable=False)
-    service = Column(String, nullable=False)
-    aliyah_number = Column(String, nullable=False)
+    parsha = Column(String, nullable=True)
+    yomtov = Column(String, nullable=True)
+    service = Column(String, nullable=False)  # Shacharit / Mincha
+    aliyah_number = Column(String, nullable=False)  # Hebrew
     reason = Column(Text, nullable=True)
 
     person_id = Column(Integer, ForeignKey("people.id"))
