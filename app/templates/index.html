@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Aliyah Tracker Dashboard</h1>
+
+<h2>People</h2>
+<ul>
+{% for p in people %}
+    <li>{{ p.english_name }} {% if p.hebrew_name %}({{ p.hebrew_name }}){% endif %}</li>
+{% endfor %}
+</ul>
+
+<h2>Aliyot</h2>
+<ul>
+{% for a in aliyot %}
+    <li>{{ a.date }} - {{ a.parsha }} - {{ a.aliyah_number }}: {{ a.person.english_name }}</li>
+{% endfor %}
+</ul>
+{% endblock %}

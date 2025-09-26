@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Relationships</h1>
+<form method="post">
+    <label>Person:</label>
+    <select name="person_id" required>
+        {% for p in people %}
+        <option value="{{ p.id }}">{{ p.english_name }}</option>
+        {% endfor %}
+    </select>
+
+    <label>Relation Type:</label>
+    <input type="text" name="relation_type" placeholder="e.g. father, spouse" required>
+
+    <label>Related To:</label>
+    <select name="related_person_id" required>
+        {% for p in people %}
+        <option value="{{ p.id }}">{{ p.english_name }}</option>
+        {% endfor %}
+    </select>
+
+    <button type="submit">Add Relationship</button>
+</form>
+
+<ul>
+{% for r in relationships %}
+    <li>{{ r.person.english_name }} is {{ r.relation_type }} of {{ r.related_person.english_name }}</li>
+{% endfor %}
+</ul>
+{% endblock %}

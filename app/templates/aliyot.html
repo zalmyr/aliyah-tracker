@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Aliyot</h1>
+<form method="post">
+    <input type="date" name="date" required>
+    <input type="text" name="parsha" placeholder="Parsha" required>
+    <input type="text" name="service" placeholder="Service" required>
+    <input type="text" name="aliyah_number" placeholder="Aliyah (e.g. Kohen)" required>
+    <input type="text" name="reason" placeholder="Reason">
+    <select name="person_id" required>
+        {% for p in people %}
+        <option value="{{ p.id }}">{{ p.english_name }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Add</button>
+</form>
+
+<ul>
+{% for a in aliyot %}
+    <li>{{ a.date }} - {{ a.parsha }} ({{ a.service }}) - {{ a.aliyah_number }}: {{ a.person.english_name }}</li>
+{% endfor %}
+</ul>
+{% endblock %}
